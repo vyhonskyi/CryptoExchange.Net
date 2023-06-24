@@ -737,9 +737,9 @@ namespace CryptoExchange.Net.OrderBook
                     if (asks.First().Key < bids.First().Key)
                     {
                         log.Write(LogLevel.Warning, $"{Id} order book {Symbol} detected out of sync order book. First ask: {asks.First().Key}, first bid: {bids.First().Key}. Resyncing");
-                        //_stopProcessing = true;
-                        //Resubscribe();
-                        //return;
+                        _stopProcessing = true;
+                        Resubscribe();
+                        return;
                     }
 
                     OnOrderBookUpdate?.Invoke((item.Bids, item.Asks));
