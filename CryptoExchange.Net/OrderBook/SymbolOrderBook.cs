@@ -220,6 +220,20 @@ namespace CryptoExchange.Net.OrderBook
             log.UpdateWriters(writers.ToList());
         }
 
+        public void StartHistory()
+        {
+            log.Write(LogLevel.Debug, $"{Id} order book {Symbol} starting");
+
+            // Clear any previous messages
+            while (_processQueue.TryDequeue(out _)) { }
+            processBuffer.Clear();
+            bookSet = false;
+
+            _processTask = Task.Factory.StartNew(ProcessQueue, TaskCreationOptions.LongRunning);
+
+            Status = OrderBookStatus.Syncing;
+        }
+
         /// <inheritdoc/>
         public async Task<CallResult<bool>> StartAsync(CancellationToken? ct = null)
         {
@@ -691,6 +705,8 @@ namespace CryptoExchange.Net.OrderBook
                 CheckProcessBuffer();
                 OnOrderBookUpdate?.Invoke((item.Bids, item.Asks));
                 OnBestOffersChanged?.Invoke((BestBid, BestAsk));
+
+                Status = OrderBookStatus.Synced;
             }
         }
 
@@ -721,9 +737,9 @@ namespace CryptoExchange.Net.OrderBook
                     if (asks.First().Key < bids.First().Key)
                     {
                         log.Write(LogLevel.Warning, $"{Id} order book {Symbol} detected out of sync order book. First ask: {asks.First().Key}, first bid: {bids.First().Key}. Resyncing");
-                        _stopProcessing = true;
-                        Resubscribe();
-                        return;
+                        //_stopProcessing = true;
+                        //Resubscribe();
+                        //return;
                     }
 
                     OnOrderBookUpdate?.Invoke((item.Bids, item.Asks));
@@ -798,10 +814,10 @@ namespace CryptoExchange.Net.OrderBook
             }
 
             foreach (var entry in bids)
-                ProcessUpdate(LastSequenceNumber + 1, OrderBookEntryType.Bid, entry);
+                ProcessUpdate(firstUpdateId, OrderBookEntryType.Bid, entry);
 
             foreach (var entry in asks)
-                ProcessUpdate(LastSequenceNumber + 1, OrderBookEntryType.Ask, entry);
+                ProcessUpdate(firstUpdateId, OrderBookEntryType.Ask, entry);
 
             if (Levels.HasValue && strictLevels)
             {
