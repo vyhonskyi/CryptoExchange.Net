@@ -703,10 +703,11 @@ namespace CryptoExchange.Net.OrderBook
                 UpdateTime = DateTime.UtcNow;
                 log.Write(LogLevel.Debug, $"{Id} order book {Symbol} data set: {BidCount} bids, {AskCount} asks. #{item.EndUpdateId}");
                 CheckProcessBuffer();
-                OnOrderBookUpdate?.Invoke((item.Bids, item.Asks));
-                OnBestOffersChanged?.Invoke((BestBid, BestAsk));
 
                 Status = OrderBookStatus.Synced;
+
+                OnOrderBookUpdate?.Invoke((item.Bids, item.Asks));
+                OnBestOffersChanged?.Invoke((BestBid, BestAsk));
             }
         }
 
